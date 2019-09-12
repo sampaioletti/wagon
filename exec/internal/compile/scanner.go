@@ -92,12 +92,12 @@ func (s *scanner) ScanFunc(bytecode []byte, meta *BytecodeMetadata) ([]Compilati
 		// TODO: Add to this table as backends support more opcodes.
 		switch inst.Op {
 		case ops.I64Load, ops.I32Load, ops.F64Load, ops.F32Load:
-			fakeBE := &AMD64Backend{}
+			fakeBE := &PlatformBackend{}
 			memSize, _ := fakeBE.paramsForMemoryOp(inst.Op)
 			inProgress.Metrics.MemoryReads += memSize
 			inProgress.Metrics.StackWrites++
 		case ops.I64Store, ops.I32Store, ops.F64Store, ops.F32Store:
-			fakeBE := &AMD64Backend{}
+			fakeBE := &PlatformBackend{}
 			memSize, _ := fakeBE.paramsForMemoryOp(inst.Op)
 			inProgress.Metrics.MemoryWrites += memSize
 			inProgress.Metrics.StackReads += 2

@@ -15,6 +15,8 @@ import (
 	"github.com/twitchyliquid64/golang-asm/obj/x86"
 )
 
+type PlatformBackend = AMD64Backend
+
 var rhsConstOptimizable = map[byte]bool{
 	ops.I64Add:  true,
 	ops.I64Sub:  true,
