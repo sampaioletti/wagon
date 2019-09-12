@@ -11,6 +11,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/go-interpreter/wagon/internal/emlibc"
+
 	"github.com/go-interpreter/wagon/exec"
 	"github.com/go-interpreter/wagon/validate"
 	"github.com/go-interpreter/wagon/wasm"
@@ -95,6 +97,9 @@ func run(w io.Writer, fname string, verify bool) {
 }
 
 func importer(name string) (*wasm.Module, error) {
+	if name == "env" {
+		return emlibc.ResolveEnv(name)
+	}
 	f, err := os.Open(name + ".wasm")
 	if err != nil {
 		return nil, err

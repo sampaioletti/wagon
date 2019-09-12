@@ -144,7 +144,8 @@ func (m *Module) ExecInitExpr(expr []byte) (interface{}, error) {
 			if globalVar == nil {
 				return nil, InvalidGlobalIndexError(index)
 			}
-			lastVal = globalVar.Type.Type
+			return m.ExecInitExpr(globalVar.Init)
+			// lastVal = globalVar.Type.Type
 		case end:
 			break
 		default:
@@ -155,7 +156,6 @@ func (m *Module) ExecInitExpr(expr []byte) (interface{}, error) {
 	if len(stack) == 0 {
 		return nil, nil
 	}
-
 	v := stack[len(stack)-1]
 	switch lastVal {
 	case ValueTypeI32:
