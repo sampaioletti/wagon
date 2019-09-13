@@ -145,7 +145,16 @@ func (module *Module) resolveImports(resolve ResolveFunc) error {
 			if err != nil {
 				return err
 			}
-
+			for _, fn := range []func() error{
+				importedModule.populateGlobals,
+				importedModule.populateFunctions,
+				importedModule.populateTables,
+				importedModule.populateLinearMemory,
+			} {
+				if err := fn(); err != nil {
+					return err
+				}
+			}
 			modules[importEntry.ModuleName] = importedModule
 		}
 
