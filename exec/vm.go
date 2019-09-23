@@ -109,8 +109,8 @@ func NewVM(module *wasm.Module, opts ...VMOption) (*VM, error) {
 		if len(module.Memory.Entries) > 1 {
 			return nil, ErrMultipleLinearMemories
 		}
-		vm.memory = make([]byte, uint(module.Memory.Entries[0].Limits.Initial)*wasmPageSize)
-		copy(vm.memory, module.LinearMemoryIndexSpace[0])
+		//use the linear memory directly in case it was explicitly set
+		vm.memory = module.LinearMemoryIndexSpace[0]
 	}
 
 	vm.funcs = make([]function, len(module.FunctionIndexSpace))
