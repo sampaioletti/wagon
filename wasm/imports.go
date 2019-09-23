@@ -210,13 +210,27 @@ func (module *Module) resolveImports(resolve ResolveFunc) error {
 			if int(index) >= len(importedModule.TableIndexSpace) {
 				return InvalidTableIndexError(index)
 			}
-			module.TableIndexSpace[0] = importedModule.TableIndexSpace[0]
+			// Support table from import when no table in base module
+			if module.Table == nil {
+				module.Table = importedModule.Table
+				module.TableIndexSpace = importedModule.TableIndexSpace
+			} else {
+				module.TableIndexSpace[0] = importedModule.TableIndexSpace[0]
+			}
+
 			module.imports.Tables++
 		case ExternalMemory:
 			if int(index) >= len(importedModule.LinearMemoryIndexSpace) {
 				return InvalidLinearMemoryIndexError(index)
 			}
-			module.LinearMemoryIndexSpace[0] = importedModule.LinearMemoryIndexSpace[0]
+			// Support memory from import when no memory in base module
+			if module.Memory == nil {
+				module.Memory = importedModule.Memory
+				module.LinearMemoryIndexSpace = importedModule.LinearMemoryIndexSpace
+			} else {
+				module.LinearMemoryIndexSpace[0] = importedModule.LinearMemoryIndexSpace[0]
+			}
+
 			module.imports.Memories++
 		default:
 			return InvalidExternalError(exportEntry.Kind)
