@@ -144,7 +144,7 @@ func (m *Module) ExecInitExpr(expr []byte) (interface{}, error) {
 			if globalVar == nil {
 				return nil, InvalidGlobalIndexError(index)
 			}
-			lastVal = globalVar.Type.Type
+			return m.ExecInitExpr(globalVar.Init)
 		case end:
 			break
 		default:
