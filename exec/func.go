@@ -41,36 +41,13 @@ type goFunction struct {
 }
 
 func (fn goFunction) call(vm *VM, index int64) {
-	// numIn = # of call inputs + vm, as the function expects
-	// an additional *VM argument
-	numIn := fn.typ.NumIn()
-	args := make([]reflect.Value, numIn)
-	proc := NewProcess(vm)
+	var args []reflect.Value
 
-	// Pass proc as an argument. Check that the function indeed
-	// expects a *Process argument.
-	if reflect.ValueOf(proc).Kind() != fn.typ.In(0).Kind() {
-		panic(fmt.Sprintf("exec: the first argument of a host function was %s, expected %s", fn.typ.In(0).Kind(), reflect.ValueOf(vm).Kind()))
-	}
-	args[0] = reflect.ValueOf(proc)
-
-	for i := numIn - 1; i >= 1; i-- {
-		val := reflect.New(fn.typ.In(i)).Elem()
-		raw := vm.popUint64()
-		kind := fn.typ.In(i).Kind()
-
-		switch kind {
-		case reflect.Float64, reflect.Float32:
-			val.SetFloat(math.Float64frombits(raw))
-		case reflect.Uint32, reflect.Uint64:
-			val.SetUint(raw)
-		case reflect.Int32, reflect.Int64:
-			val.SetInt(int64(raw))
-		default:
-			panic(fmt.Sprintf("exec: args %d invalid kind=%v", i, kind))
-		}
-
-		args[i] = val
+	// Check for Variadic
+	if fn.typ.IsVariadic() {
+		args = fn.getArgsV(vm, index)
+	} else {
+		args = fn.getArgs(vm, index)
 	}
 
 	rtrns := fn.val.Call(args)
@@ -87,6 +64,65 @@ func (fn goFunction) call(vm *VM, index int64) {
 			panic(fmt.Sprintf("exec: return value %d invalid kind=%v", i, kind))
 		}
 	}
+}
+
+func (fn goFunction) getArgs(vm *VM, index int64) []reflect.Value {
+	// numIn = # of call inputs + vm, as the function expects
+	// an additional *VM argument
+
+	numIn := fn.typ.NumIn()
+	args := make([]reflect.Value, numIn)
+	idx := 0
+	proc := NewProcess(vm)
+	// Pass proc as an argument. Check that the function indeed
+	// expects a *Process argument. If doesn't, skip pass
+	if reflect.ValueOf(proc).Kind() == fn.typ.In(0).Kind() {
+		args[idx] = reflect.ValueOf(proc)
+		idx++
+	}
+	for i := numIn - 1; i >= idx; i-- {
+		val := reflect.New(fn.typ.In(i)).Elem()
+		raw := vm.popUint64()
+		kind := fn.typ.In(i).Kind()
+		switch kind {
+		case reflect.Float64, reflect.Float32:
+			val.SetFloat(math.Float64frombits(raw))
+		case reflect.Uint32, reflect.Uint64:
+			val.SetUint(raw)
+		case reflect.Int32, reflect.Int64:
+			val.SetInt(int64(raw))
+		default:
+			panic(fmt.Sprintf("exec: args %d invalid kind=%v", i, kind))
+		}
+		args[i] = val
+	}
+	return args
+}
+
+func (fn goFunction) getArgsV(vm *VM, index int64) []reflect.Value {
+	// cant pass proc to variadic
+	// Get Sig so we know how many arguments
+	s, _ := vm.module.GetFunctionSig(uint32(index))
+	numIn := len(s.ParamTypes)
+	args := make([]reflect.Value, numIn)
+	valType := fn.typ.In(0).Elem()
+	kind := valType.Kind()
+	for i := numIn - 1; i >= 0; i-- {
+		val := reflect.New(valType).Elem()
+		raw := vm.popUint64()
+		switch kind {
+		case reflect.Float64, reflect.Float32:
+			val.SetFloat(math.Float64frombits(raw))
+		case reflect.Uint32, reflect.Uint64:
+			val.SetUint(raw)
+		case reflect.Int32, reflect.Int64:
+			val.SetInt(int64(raw))
+		default:
+			panic(fmt.Sprintf("exec: args %d invalid kind=%v", i, kind))
+		}
+		args[i] = val
+	}
+	return args
 }
 
 func (compiled compiledFunction) call(vm *VM, index int64) {
